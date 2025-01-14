@@ -13,7 +13,7 @@ const sendButton = document.getElementById('send-button');
 let myStream;
 let peerConnection;
 const iceServers = { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] }; // STUN server
-const signalingServer = new WebSocket('ws://https://flayz13.github.io/Portail/'); // Replace with your server's address
+const signalingServer = new WebSocket('https://flayz13.github.io/Portail/'); // Replace with your server's address
 
 // Camera and Microphone Selection (for settings)
 const videoSelect = document.getElementById('video-input');
