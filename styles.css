@@ -1,55 +1,231 @@
+/* General Body and Layout */
+body {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    font-family: 'Arial', sans-serif;
+    margin: 0;
+    background-color: #f0f0f0;
+    height: 100vh; /* Make sure the body takes full viewport height */
+}
+
+/* Chat Container */
+.chat-container {
+    width: 80%;
+    max-width: 900px;
+    background-color: white;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+    border-radius: 10px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    height: 90vh;
+}
+
 /* Video Section */
 .video-section {
     display: flex;
     justify-content: space-between;
-    padding: 0; /* Remove padding */
+    padding: 20px;
     background-color: #333;
-    flex: 3; /* Allocate more space to the video section */
-    height: 80vh; /* Increase height */
+    flex: 2;
 }
 
 .video-wrapper {
     position: relative;
-    width: 50%; /* Each video takes half the screen */
+    width: 48%;
     background-color: black;
     border-radius: 5px;
     overflow: hidden;
     display: flex;
     justify-content: center;
     align-items: center;
-    height: 100%; /* Full height */
-    margin: 0; /* Remove margins */
 }
 
 video {
     width: 100%;
     height: 100%;
-    object-fit: cover; /* Ensure the video fills the container */
+    object-fit: cover;
 }
 
-/* Chat Box Container */
+/* Settings Icon */
+.settings-icon {
+    position: fixed;
+    top: 10px;
+    right: 10px;
+    font-size: 30px;
+    cursor: pointer;
+    color: #333;
+    z-index: 1000;
+}
+
+/* Controls Section */
+.controls-section {
+    padding: 15px;
+    background-color: #222;
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+}
+
+.control-btn {
+    padding: 10px 20px;
+    background-color: #ff4b4b;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: background-color 0.3s ease, transform 0.3s ease;
+}
+
+.control-btn.hidden {
+    display: none;
+}
+
+.control-btn:hover {
+    background-color: #ff6b6b;
+    transform: scale(1.05); /* Slight scale effect for interactivity */
+}
+
+/* Chat Box */
 .chat-box-container {
-    flex: 0.5; /* Reduce the flex value to make the chat box smaller */
-    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    padding: 15px;
     background-color: #f9f9f9;
     gap: 10px;
-    max-height: 150px; /* Set a maximum height */
+    flex: 1;
 }
 
-/* Responsive Design */
+.chat-box {
+    max-height: 250px;
+    overflow-y: auto;
+    padding: 10px;
+    background-color: #ececec;
+    border-radius: 10px;
+    margin-bottom: 10px;
+    font-size: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.chat-input {
+    padding: 10px;
+    font-size: 14px;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+    flex-grow: 1;
+    margin-right: 10px;
+}
+
+.chat-input:focus {
+    border-color: #888;
+}
+
+/* Message Styles */
+.sent-message {
+    background-color: #d1e7ff;
+    padding: 8px;
+    border-radius: 5px;
+    margin-bottom: 10px;
+    text-align: right;
+    max-width: 80%;
+    word-wrap: break-word;
+    font-size: 14px;
+}
+
+.received-message {
+    background-color: #f1f1f1;
+    padding: 8px;
+    border-radius: 5px;
+    margin-bottom: 10px;
+    text-align: left;
+    max-width: 80%;
+    word-wrap: break-word;
+    font-size: 14px;
+}
+
+/* Settings Modal Styling */
+.settings-modal {
+    display: none;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 90%;
+    max-width: 400px;
+    background: white;
+    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.25);
+    border-radius: 10px;
+    padding: 20px;
+    z-index: 1100;
+    overflow-y: auto; /* Allow scrolling if content overflows */
+}
+
+.settings-modal h2 {
+    margin: 0 0 10px;
+    font-size: 1.5em;
+    text-align: center;
+}
+
+.settings-modal label {
+    display: block;
+    margin: 10px 0 5px;
+    font-weight: bold;
+    font-size: 1em;
+}
+
+.settings-modal select, 
+.settings-modal input[type="range"] {
+    width: 100%;
+    padding: 5px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    font-size: 1em;
+}
+
+.settings-modal input[type="range"] {
+    height: 10px; /* Make the volume control smaller */
+    margin-bottom: 10px;
+}
+
+.settings-modal button {
+    margin-top: 10px;
+    width: 100%;
+    padding: 10px;
+    border: none;
+    background: #333;
+    color: white;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 1em;
+}
+
+.settings-modal button:hover {
+    background: #444;
+}
+
+/* Responsive Layout for Smaller Screens */
 @media (max-width: 768px) {
     .video-section {
-        flex-direction: column; /* Stack videos vertically on smaller screens */
-        height: 60vh; /* Adjust height for mobile */
+        flex-direction: column; /* Stack videos on smaller screens */
     }
-
     .video-wrapper {
-        width: 100%; /* Full width for stacked videos */
-        height: 48%; /* Adjust height for stacked videos */
-        margin-bottom: 10px; /* Add space between stacked videos */
+        width: 100%;
+        margin-bottom: 10px;  /* Adds space between the videos */
     }
+}
 
-    .chat-box-container {
-        max-height: 200px; /* Increase chat box height on mobile */
+@media (max-width: 600px) {
+    .chat-container {
+        width: 100%;
+        max-width: 100%;
+    }
+    .controls-section {
+        flex-direction: column;
+        gap: 5px;
     }
 }
