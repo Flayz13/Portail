@@ -1,3 +1,4 @@
+const signalingServer = new WebSocket("wss://flayz13s-projects.up.railway.app");
 // Video elements and controls
 const myVideo = document.getElementById('my-stream');
 const otherVideo = document.getElementById('other-stream');
