@@ -29,7 +29,7 @@ signalingServer.onopen = () => {
     console.log('Connected to the signaling server');
 
     // Authentification avec le serveur WebSocket via un token
-    const token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyIjoiZGVtbyIsImlhdCI6MTc0NDI4NjA2NX0.YyHjKa7mxyINCy5ul4ykNi576410cN2zUE-aQxagY5M"; // Utiliser un token généré sur le serveur
+    const token = "votre_token"; // Utiliser un token généré sur le serveur
     signalingServer.send(JSON.stringify({ type: 'auth', token }));
 };
 
@@ -77,6 +77,7 @@ async function startChat() {
 
         // Display the remote stream when received
         peerConnection.ontrack = event => {
+            console.log('Remote stream received');
             otherVideo.srcObject = event.streams[0];
         };
 
@@ -95,6 +96,7 @@ async function startChat() {
 // Handle signaling messages from the other peer
 signalingServer.onmessage = async message => {
     const data = JSON.parse(message.data);
+    console.log('Message received from signaling server:', data);
 
     // Handle chat messages
     if (data.type === 'chat') {
