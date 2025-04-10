@@ -13,7 +13,7 @@ const sendButton = document.getElementById('send-button');
 let myStream;
 let peerConnection;
 const iceServers = { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] }; // STUN server
-const signalingServer = new WebSocket('https://flayz13.github.io/Portail/'); // Replace with your server's address
+const signalingServer = new WebSocket('wss://flayz13s-projects.up.railway.app'); // Replace with your server's address
 
 // Camera and Microphone Selection (for settings)
 const videoSelect = document.getElementById('video-input');
@@ -25,7 +25,13 @@ const settingsIcon = document.getElementById('settings-icon');
 const closeSettingsButton = document.getElementById('close-settings');
 
 // When connected to the signaling server
-signalingServer.onopen = () => console.log('Connected to the signaling server');
+signalingServer.onopen = () => {
+    console.log('Connected to the signaling server');
+
+    // Authentification avec le serveur WebSocket via un token
+    const token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyIjoiZGVtbyIsImlhdCI6MTc0NDI4NjA2NX0.YyHjKa7mxyINCy5ul4ykNi576410cN2zUE-aQxagY5M"; // Utiliser un token généré sur le serveur
+    signalingServer.send(JSON.stringify({ type: 'auth', token }));
+};
 
 // Request camera and microphone permissions if not granted
 async function requestMediaPermissions() {
@@ -107,6 +113,10 @@ signalingServer.onmessage = async message => {
     } else if (data.type === 'candidate') {
         const candidate = new RTCIceCandidate(data.candidate);
         await peerConnection.addIceCandidate(candidate);
+    } else if (data.type === 'auth_success') {
+        console.log('Authentification réussie');
+    } else if (data.type === 'auth_error') {
+        console.error('Erreur d\'authentification');
     }
 };
 
