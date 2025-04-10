@@ -29,7 +29,7 @@ signalingServer.onopen = () => {
     console.log('Connected to the signaling server');
 
     // Authentification avec le serveur WebSocket via un token
-    const token = "votre_token"; // Utiliser un token généré sur le serveur
+    const token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyIjoiZGVtbyIsImlhdCI6MTc0NDI4NjA2NX0.YyHjKa7mxyINCy5ul4ykNi576410cN2zUE-aQxagY5M"; // Utiliser un token généré sur le serveur
     signalingServer.send(JSON.stringify({ type: 'auth', token }));
 };
 
