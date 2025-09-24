@@ -3,11 +3,13 @@ const express = require("express");
 const WebSocket = require("ws");
 const jwt = require("jsonwebtoken");
 const cors = require("cors");
+const bodyParser = require("body-parser");
 
 const app = express();
 app.use(cors());
+app.use(bodyParser.json()); // To parse JSON body
 
-// Middleware pour vérifier le token d'authentification (pour améliorer la sécurité)
+// Middleware pour vérifier le token d'authentification
 function authenticateToken(ws, next) {
     ws.on("message", (message) => {
         const data = JSON.parse(message);
@@ -37,13 +39,11 @@ const wss = new WebSocket.Server({ server });
 wss.on("connection", (ws, req) => {
     console.log("Nouvelle connexion WebSocket");
 
-    // Gérer l'authentification avec JWT
     authenticateToken(ws, () => {
-        // Quand l'utilisateur est authentifié, il peut envoyer et recevoir des messages
         ws.on("message", (message) => {
             const data = JSON.parse(message);
 
-            // Si c'est un message de chat, on le diffuse à tous les autres clients
+            // Chat messages
             if (data.type === "chat") {
                 wss.clients.forEach(client => {
                     if (client !== ws && client.readyState === WebSocket.OPEN) {
@@ -52,8 +52,8 @@ wss.on("connection", (ws, req) => {
                 });
             }
 
-            // Si c'est un message WebRTC (offer, answer, ou candidate), on le renvoie aux autres
-            if (data.type === "offer" || data.type === "answer" || data.type === "candidate") {
+            // WebRTC messages
+            if (["offer", "answer", "candidate"].includes(data.type)) {
                 wss.clients.forEach(client => {
                     if (client !== ws && client.readyState === WebSocket.OPEN) {
                         client.send(message);
@@ -67,11 +67,17 @@ wss.on("connection", (ws, req) => {
 // Endpoint simple pour tester le serveur
 app.get("/", (req, res) => res.send("WebSocket Server Running"));
 
-// Authentification avec JWT - endpoint d'exemple pour obtenir un token
+// Authentification avec username/password
 app.post("/login", (req, res) => {
-    const username = req.body.username; // Exemple d'authentification par nom d'utilisateur
+    const { username, password } = req.body;
 
-    // Créer un token JWT à la connexion
-    const token = jwt.sign({ username }, process.env.SECRET_KEY, { expiresIn: "1h" });
-    res.json({ token });
+    if (
+        (username === "Gap" && password === "Gap") ||
+        (username === "Veynes" && password === "Veynes")
+    ) {
+        const token = jwt.sign({ username }, process.env.SECRET_KEY, { expiresIn: "1h" });
+        res.json({ token });
+    } else {
+        res.status(401).json({ error: "Invalid credentials" });
+    }
 });
