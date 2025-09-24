@@ -1,62 +1,68 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chat Vidéo</title>
+    <title>Video Chat</title>
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-
- <div id="login-container" class="login-container">
-        <h2>Connexion</h2>
-        <input type="text" id="login-username" placeholder="Nom d'utilisateur">
-        <input type="password" id="login-password" placeholder="Mot de passe">
-        <button id="login-button">Se connecter</button>
-        <div id="login-error" class="error-message"></div>
+    <!-- Login Container -->
+    <div class="login-container" id="login-container">
+        <h2>Login</h2>
+        <input type="text" id="username" placeholder="Username">
+        <input type="password" id="password" placeholder="Password">
+        <button id="login-button">Login</button>
+        <div id="login-error" class="error-message" style="display:none"></div>
     </div>
-    
-    <!-- Settings Icon (Cogwheel) -->
-    <div id="settings-icon" class="settings-icon">&#9881;</div>
 
-    <div class="chat-container" style="display: none;">
+    <!-- Chat Container -->
+    <div class="chat-container" id="chat-container">
+        <!-- Settings Icon -->
+        <div class="settings-icon" id="settings-icon">&#9881;</div>
+
+        <!-- Video Section -->
         <div class="video-section">
             <div class="video-wrapper">
-                <video id="my-stream" autoplay muted></video>
+                <video id="left-stream" autoplay muted playsinline></video>
             </div>
             <div class="video-wrapper">
-                <video id="other-stream" autoplay></video>
+                <video id="right-stream" autoplay muted playsinline></video>
             </div>
         </div>
 
+        <!-- Controls Section -->
         <div class="controls-section">
-            <button id="start-chat" class="control-btn">Commencer la discussion</button>
-            <button id="stop-chat" class="control-btn hidden">Arrêter la discussion</button>
+            <button id="start-chat" class="control-btn">Start Chat</button>
+            <button id="stop-chat" class="control-btn hidden">Stop Chat</button>
         </div>
 
+        <!-- Chat Box -->
         <div class="chat-box-container">
-            <div id="chat-box" class="chat-box"></div>
-            <input type="text" id="chat-input" class="chat-input" placeholder="Tapez un message...">
-            <button id="send-button" class="control-btn">Envoyer</button>
+            <div class="chat-box" id="chat-box"></div>
+            <div style="display:flex;">
+                <input type="text" id="chat-input" class="chat-input" placeholder="Type a message...">
+                <button id="send-button" class="control-btn">Send</button>
+            </div>
         </div>
     </div>
 
     <!-- Settings Modal -->
-    <div id="settings-modal" class="settings-modal">
-        <h2>Paramètres</h2>
-        <label for="video-input">Sélectionnez la caméra :</label>
+    <div class="settings-modal" id="settings-modal">
+        <h2>Settings</h2>
+        <label for="video-input">Camera:</label>
         <select id="video-input"></select>
 
-        <label for="audio-input">Sélectionnez le microphone :</label>
+        <label for="audio-input">Microphone:</label>
         <select id="audio-input"></select>
 
-        <label for="audio-output">Sélectionnez les haut-parleurs :</label>
+        <label for="audio-output">Speaker:</label>
         <select id="audio-output"></select>
 
-        <label for="volume-control">Réglage du volume :</label>
-        <input type="range" id="volume-control" min="0" max="1" step="0.01" value="1">
-        
-        <button id="close-settings">Fermer</button>
+        <label for="volume-control">Volume:</label>
+        <input type="range" id="volume-control" min="0" max="100" value="50">
+
+        <button id="close-settings">Close</button>
     </div>
 
     <script src="script.js"></script>
