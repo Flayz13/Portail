@@ -60,7 +60,7 @@ loginButton.addEventListener('click', async () => {
 
         usernameGlobal = username;
         connectWebSocket(data.token);
-
+        populateDevices(); // Populate device dropdowns
     } catch (err) {
         loginError.textContent = "Invalid username or password";
         loginError.style.display = "block";
@@ -77,10 +77,8 @@ function connectWebSocket(token) {
     signalingServer.onmessage = async message => {
         const data = JSON.parse(message.data);
 
-        // Chat messages
         if (data.type === 'chat') displayMessage(data.message, 'received');
 
-        // WebRTC signaling
         if (data.type === 'offer') {
             await peerConnection.setRemoteDescription(new RTCSessionDescription(data.offer));
             const answer = await peerConnection.createAnswer();
@@ -122,17 +120,20 @@ async function startChat() {
         const videoDevices = allStreams.filter(d => d.kind === 'videoinput');
         let selectedDeviceId;
 
-        if (usernameGlobal === 'Veynes') selectedDeviceId = videoDevices[0].deviceId; // left camera
-        else selectedDeviceId = videoDevices[1]?.deviceId || videoDevices[0].deviceId; // right camera
+        if (usernameGlobal === 'Veynes') selectedDeviceId = videoDevices[0].deviceId;
+        else selectedDeviceId = videoDevices[1]?.deviceId || videoDevices[0].deviceId;
 
         myStream = await navigator.mediaDevices.getUserMedia({ 
-            video: { deviceId: selectedDeviceId ? { exact: selectedDeviceId } : undefined },
+            video: { deviceId: { exact: selectedDeviceId } },
             audio: true 
         });
 
         // Assign stream to left or right video
         if (usernameGlobal === 'Veynes') leftVideo.srcObject = myStream;
         else rightVideo.srcObject = myStream;
+
+        // Auto-select device in settings
+        videoSelect.value = selectedDeviceId;
 
         peerConnection = new RTCPeerConnection(iceServers);
         myStream.getTracks().forEach(track => peerConnection.addTrack(track, myStream));
@@ -186,6 +187,39 @@ function displayMessage(message, type) {
     div.classList.add(type === 'sent' ? 'sent-message' : 'received-message');
     chatBox.appendChild(div);
     chatBox.scrollTop = chatBox.scrollHeight;
+}
+
+// Populate devices
+async function populateDevices() {
+    const devices = await navigator.mediaDevices.enumerateDevices();
+    const videoDevices = devices.filter(d => d.kind === 'videoinput');
+    const audioDevices = devices.filter(d => d.kind === 'audioinput');
+    const audioOutputDevices = devices.filter(d => d.kind === 'audiooutput');
+
+    videoSelect.innerHTML = '';
+    audioSelect.innerHTML = '';
+    audioOutputSelect.innerHTML = '';
+
+    videoDevices.forEach((device, i) => {
+        const option = document.createElement('option');
+        option.value = device.deviceId;
+        option.textContent = device.label || `Camera ${i + 1}`;
+        videoSelect.appendChild(option);
+    });
+
+    audioDevices.forEach((device, i) => {
+        const option = document.createElement('option');
+        option.value = device.deviceId;
+        option.textContent = device.label || `Microphone ${i + 1}`;
+        audioSelect.appendChild(option);
+    });
+
+    audioOutputDevices.forEach((device, i) => {
+        const option = document.createElement('option');
+        option.value = device.deviceId;
+        option.textContent = device.label || `Speaker ${i + 1}`;
+        audioOutputSelect.appendChild(option);
+    });
 }
 
 // Event listeners
