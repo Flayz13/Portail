@@ -1,4 +1,3 @@
-/* General Body and Layout */
 body {
     display: flex;
     flex-direction: column;
@@ -7,11 +6,9 @@ body {
     font-family: 'Arial', sans-serif;
     margin: 0;
     background-color: #f0f0f0;
-    height: 100vh; /* Make sure the body takes full viewport height */
+    height: 100vh;
 }
 
-
-/* Login Container */
 .login-container {
     display: flex;
     flex-direction: column;
@@ -51,7 +48,7 @@ body {
 
 .login-container button:hover {
     background-color: #ff6b6b;
-    transform: scale(1.05); /* Slight scale effect for interactivity */
+    transform: scale(1.05);
 }
 
 .error-message {
@@ -61,7 +58,6 @@ body {
     text-align: center;
 }
 
-/* Chat Container */
 .chat-container {
     width: 80%;
     max-width: 900px;
@@ -69,13 +65,11 @@ body {
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
     border-radius: 10px;
     overflow: hidden;
-    display: flex;
+    display: none;
     flex-direction: column;
     height: 90vh;
-    display: none; /* Hidden by default until login */
 }
 
-/* Video Section */
 .video-section {
     display: flex;
     justify-content: space-between;
@@ -101,7 +95,6 @@ video {
     object-fit: cover;
 }
 
-/* Settings Icon */
 .settings-icon {
     position: fixed;
     top: 10px;
@@ -112,7 +105,6 @@ video {
     z-index: 1000;
 }
 
-/* Controls Section */
 .controls-section {
     padding: 15px;
     background-color: #222;
@@ -138,10 +130,9 @@ video {
 
 .control-btn:hover {
     background-color: #ff6b6b;
-    transform: scale(1.05); /* Slight scale effect for interactivity */
+    transform: scale(1.05);
 }
 
-/* Chat Box */
 .chat-box-container {
     display: flex;
     flex-direction: column;
@@ -177,12 +168,10 @@ video {
     border-color: #888;
 }
 
-/* Message Styles */
 .sent-message {
     background-color: #d1e7ff;
     padding: 8px;
     border-radius: 5px;
-    margin-bottom: 10px;
     text-align: right;
     max-width: 80%;
     word-wrap: break-word;
@@ -193,14 +182,12 @@ video {
     background-color: #f1f1f1;
     padding: 8px;
     border-radius: 5px;
-    margin-bottom: 10px;
     text-align: left;
     max-width: 80%;
     word-wrap: break-word;
     font-size: 14px;
 }
 
-/* Settings Modal Styling */
 .settings-modal {
     display: none;
     position: fixed;
@@ -214,7 +201,7 @@ video {
     border-radius: 10px;
     padding: 20px;
     z-index: 1100;
-    overflow-y: auto; /* Allow scrolling if content overflows */
+    overflow-y: auto;
 }
 
 .settings-modal h2 {
@@ -227,7 +214,6 @@ video {
     display: block;
     margin: 10px 0 5px;
     font-weight: bold;
-    font-size: 1em;
 }
 
 .settings-modal select, 
@@ -237,11 +223,6 @@ video {
     border: 1px solid #ccc;
     border-radius: 5px;
     font-size: 1em;
-}
-
-.settings-modal input[type="range"] {
-    height: 10px; /* Make the volume control smaller */
-    margin-bottom: 10px;
 }
 
 .settings-modal button {
@@ -260,24 +241,12 @@ video {
     background: #444;
 }
 
-/* Responsive Layout for Smaller Screens */
 @media (max-width: 768px) {
-    .video-section {
-        flex-direction: column; /* Stack videos on smaller screens */
-    }
-    .video-wrapper {
-        width: 100%;
-        margin-bottom: 10px;  /* Adds space between the videos */
-    }
+    .video-section { flex-direction: column; }
+    .video-wrapper { width: 100%; margin-bottom: 10px; }
 }
 
 @media (max-width: 600px) {
-    .chat-container {
-        width: 100%;
-        max-width: 100%;
-    }
-    .controls-section {
-        flex-direction: column;
-        gap: 5px;
-    }
+    .chat-container { width: 100%; max-width: 100%; }
+    .controls-section { flex-direction: column; gap: 5px; }
 }
