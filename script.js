@@ -25,6 +25,27 @@ const settingsIcon = document.getElementById('settings-icon');
 const closeSettingsButton = document.getElementById('close-settings');
 
 
+// Login elements
+const loginButton = document.getElementById('login-button');
+const loginContainer = document.getElementById('login-container');
+const chatContainer = document.getElementById('chat-container');
+const loginError = document.getElementById('login-error');
+const usernameInput = document.getElementById('username');
+
+// Handle login
+loginButton.addEventListener('click', () => {
+    const username = usernameInput.value.trim();
+
+    if (username) {
+        // Here you would handle login logic (for example, sending the username to the server)
+        loginContainer.style.display = 'none';
+        chatContainer.style.display = 'flex'; // Show the video chat container
+    } else {
+        loginError.style.display = 'block';
+    }
+});
+
+
 // When connected to the signaling server
 signalingServer.onopen = () => {
     console.log('Connected to the signaling server');
