@@ -3,11 +3,16 @@ const express = require("express");
 const WebSocket = require("ws");
 const jwt = require("jsonwebtoken");
 const cors = require("cors");
-const bodyParser = require("body-parser");
 
 const app = express();
 app.use(cors());
-app.use(bodyParser.json()); // To parse JSON body
+app.use(express.json()); // <-- important to parse JSON body
+
+// Hardcoded login credentials
+const users = [
+    { username: "Gap", password: "Gap" },
+    { username: "Veynes", password: "Veynes" }
+];
 
 // Middleware pour vérifier le token d'authentification
 function authenticateToken(ws, next) {
@@ -18,7 +23,7 @@ function authenticateToken(ws, next) {
                 const decoded = jwt.verify(data.token, process.env.SECRET_KEY);
                 ws.user = decoded;
                 ws.send(JSON.stringify({ type: "auth_success" }));
-                next(); // Appel de la fonction de traitement après authentification
+                next();
             } catch (err) {
                 ws.send(JSON.stringify({ type: "auth_error" }));
                 ws.close();
@@ -27,33 +32,23 @@ function authenticateToken(ws, next) {
     });
 }
 
-// Créer un serveur HTTP
+// HTTP server
 const server = app.listen(process.env.PORT || 3000, () => {
-    console.log(`Serveur démarré sur le port ${process.env.PORT || 3000}`);
+    console.log(`Server running on port ${process.env.PORT || 3000}`);
 });
 
-// Création du serveur WebSocket
+// WebSocket server
 const wss = new WebSocket.Server({ server });
 
-// Écouter les connexions WebSocket
-wss.on("connection", (ws, req) => {
-    console.log("Nouvelle connexion WebSocket");
+wss.on("connection", (ws) => {
+    console.log("New WebSocket connection");
 
     authenticateToken(ws, () => {
         ws.on("message", (message) => {
             const data = JSON.parse(message);
 
-            // Chat messages
-            if (data.type === "chat") {
-                wss.clients.forEach(client => {
-                    if (client !== ws && client.readyState === WebSocket.OPEN) {
-                        client.send(message);
-                    }
-                });
-            }
-
-            // WebRTC messages
-            if (["offer", "answer", "candidate"].includes(data.type)) {
+            // Broadcast chat messages
+            if (data.type === "chat" || data.type === "offer" || data.type === "answer" || data.type === "candidate") {
                 wss.clients.forEach(client => {
                     if (client !== ws && client.readyState === WebSocket.OPEN) {
                         client.send(message);
@@ -64,20 +59,16 @@ wss.on("connection", (ws, req) => {
     });
 });
 
-// Endpoint simple pour tester le serveur
+// Test endpoint
 app.get("/", (req, res) => res.send("WebSocket Server Running"));
 
-// Authentification avec username/password
+// Login endpoint
 app.post("/login", (req, res) => {
     const { username, password } = req.body;
+    const user = users.find(u => u.username === username && u.password === password);
 
-    if (
-        (username === "Gap" && password === "Gap") ||
-        (username === "Veynes" && password === "Veynes")
-    ) {
-        const token = jwt.sign({ username }, process.env.SECRET_KEY, { expiresIn: "1h" });
-        res.json({ token });
-    } else {
-        res.status(401).json({ error: "Invalid credentials" });
-    }
+    if (!user) return res.status(401).json({ error: "Invalid username or password" });
+
+    const token = jwt.sign({ username }, process.env.SECRET_KEY, { expiresIn: "1h" });
+    res.json({ token });
 });
