@@ -1,6 +1,6 @@
 // Video elements and controls
-const myVideo = document.getElementById('my-stream');
-const otherVideo = document.getElementById('other-stream');
+const leftVideo = document.getElementById('left-stream');
+const rightVideo = document.getElementById('right-stream');
 const startChatButton = document.getElementById('start-chat');
 const stopChatButton = document.getElementById('stop-chat');
 
@@ -12,10 +12,11 @@ const sendButton = document.getElementById('send-button');
 // WebRTC and WebSocket setup
 let myStream;
 let peerConnection;
-const iceServers = { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] }; // STUN server
-const signalingServer = new WebSocket('wss://flayz13s-projects.up.railway.app'); // Replace with your server's address
+const iceServers = { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] };
+let signalingServer;
+let usernameGlobal = null;
 
-// Camera and Microphone Selection (for settings)
+// Camera and Microphone Selection
 const videoSelect = document.getElementById('video-input');
 const audioSelect = document.getElementById('audio-input');
 const audioOutputSelect = document.getElementById('audio-output');
@@ -24,224 +25,173 @@ const settingsModal = document.getElementById('settings-modal');
 const settingsIcon = document.getElementById('settings-icon');
 const closeSettingsButton = document.getElementById('close-settings');
 
-
 // Login elements
 const loginButton = document.getElementById('login-button');
 const loginContainer = document.getElementById('login-container');
 const chatContainer = document.getElementById('chat-container');
 const loginError = document.getElementById('login-error');
 const usernameInput = document.getElementById('username');
+const passwordInput = document.getElementById('password');
 
 // Handle login
-loginButton.addEventListener('click', () => {
+loginButton.addEventListener('click', async () => {
     const username = usernameInput.value.trim();
+    const password = passwordInput.value.trim();
 
-    if (username) {
-        // Here you would handle login logic (for example, sending the username to the server)
+    if (!username || !password) {
+        loginError.textContent = "Please enter username and password";
+        loginError.style.display = "block";
+        return;
+    }
+
+    try {
+        const res = await fetch('http://localhost:3000/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username, password })
+        });
+
+        if (!res.ok) throw new Error("Invalid credentials");
+
+        const data = await res.json();
         loginContainer.style.display = 'none';
-        chatContainer.style.display = 'flex'; // Show the video chat container
-    } else {
-        loginError.style.display = 'block';
+        chatContainer.style.display = 'flex';
+        loginError.style.display = 'none';
+
+        usernameGlobal = username;
+        connectWebSocket(data.token);
+
+    } catch (err) {
+        loginError.textContent = "Invalid username or password";
+        loginError.style.display = "block";
     }
 });
 
+// Connect WebSocket
+function connectWebSocket(token) {
+    signalingServer = new WebSocket('ws://localhost:3000');
+    signalingServer.onopen = () => {
+        signalingServer.send(JSON.stringify({ type: 'auth', token }));
+    };
 
-// When connected to the signaling server
-signalingServer.onopen = () => {
-    console.log('Connected to the signaling server');
+    signalingServer.onmessage = async message => {
+        const data = JSON.parse(message.data);
 
-    // Authentification avec le serveur WebSocket via un token
-    const token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyIjoiZGVtbyIsImlhdCI6MTc0NDI4NjA2NX0.YyHjKa7mxyINCy5ul4ykNi576410cN2zUE-aQxagY5M"; // Utiliser un token généré sur le serveur
-    signalingServer.send(JSON.stringify({ type: 'auth', token }));
-};
+        // Chat messages
+        if (data.type === 'chat') displayMessage(data.message, 'received');
 
-// Request camera and microphone permissions if not granted
+        // WebRTC signaling
+        if (data.type === 'offer') {
+            await peerConnection.setRemoteDescription(new RTCSessionDescription(data.offer));
+            const answer = await peerConnection.createAnswer();
+            await peerConnection.setLocalDescription(answer);
+            signalingServer.send(JSON.stringify({ type: 'answer', answer }));
+        } else if (data.type === 'answer') {
+            await peerConnection.setRemoteDescription(new RTCSessionDescription(data.answer));
+        } else if (data.type === 'candidate') {
+            const candidate = new RTCIceCandidate(data.candidate);
+            await peerConnection.addIceCandidate(candidate);
+        }
+    };
+}
+
+// Request media permissions
 async function requestMediaPermissions() {
     try {
         const devices = await navigator.mediaDevices.enumerateDevices();
-        const videoDevices = devices.filter(device => device.kind === 'videoinput');
-        const audioDevices = devices.filter(device => device.kind === 'audioinput');
-
-        if (videoDevices.length === 0 || audioDevices.length === 0) {
-            alert('Veuillez autoriser l\'accès à votre caméra et microphone');
+        const videoDevices = devices.filter(d => d.kind === 'videoinput');
+        const audioDevices = devices.filter(d => d.kind === 'audioinput');
+        if (!videoDevices.length || !audioDevices.length) {
+            alert("Please allow camera and microphone access");
             return false;
         }
-
         return true;
-    } catch (error) {
-        console.error('Erreur lors de la demande de permissions :', error);
+    } catch (err) {
+        console.error(err);
         return false;
     }
 }
 
-// Start the video chat by accessing the local video stream
+// Start chat
 async function startChat() {
     const permissionGranted = await requestMediaPermissions();
     if (!permissionGranted) return;
 
     try {
-        // Get local stream
-        myStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-        myVideo.srcObject = myStream;
+        const allStreams = await navigator.mediaDevices.enumerateDevices();
+        const videoDevices = allStreams.filter(d => d.kind === 'videoinput');
+        let selectedDeviceId;
 
-        // Initialize WebRTC connection
+        if (usernameGlobal === 'Veynes') selectedDeviceId = videoDevices[0].deviceId; // left camera
+        else selectedDeviceId = videoDevices[1]?.deviceId || videoDevices[0].deviceId; // right camera
+
+        myStream = await navigator.mediaDevices.getUserMedia({ 
+            video: { deviceId: selectedDeviceId ? { exact: selectedDeviceId } : undefined },
+            audio: true 
+        });
+
+        // Assign stream to left or right video
+        if (usernameGlobal === 'Veynes') leftVideo.srcObject = myStream;
+        else rightVideo.srcObject = myStream;
+
         peerConnection = new RTCPeerConnection(iceServers);
-
-        // Add local stream tracks to the peer connection
         myStream.getTracks().forEach(track => peerConnection.addTrack(track, myStream));
 
-        // Listen for ICE candidates and send them to the other peer
-        peerConnection.onicecandidate = event => {
-            if (event.candidate) {
-                signalingServer.send(JSON.stringify({ type: 'candidate', candidate: event.candidate }));
-            }
+        peerConnection.onicecandidate = e => {
+            if (e.candidate) signalingServer.send(JSON.stringify({ type: 'candidate', candidate: e.candidate }));
         };
 
-        // Display the remote stream when received
-        peerConnection.ontrack = event => {
-            console.log('Remote stream received');
-            otherVideo.srcObject = event.streams[0];
+        peerConnection.ontrack = e => {
+            if (usernameGlobal === 'Veynes') rightVideo.srcObject = e.streams[0];
+            else leftVideo.srcObject = e.streams[0];
         };
 
-        // Create an offer to start the connection
         const offer = await peerConnection.createOffer();
         await peerConnection.setLocalDescription(offer);
         signalingServer.send(JSON.stringify({ type: 'offer', offer }));
 
         startChatButton.classList.add('hidden');
         stopChatButton.classList.remove('hidden');
-    } catch (error) {
-        console.error('Erreur lors du démarrage du chat vidéo :', error);
+
+    } catch (err) {
+        console.error(err);
     }
 }
 
-// Handle signaling messages from the other peer
-signalingServer.onmessage = async message => {
-    const data = JSON.parse(message.data);
-    console.log('Message received from signaling server:', data);
-
-    // Handle chat messages
-    if (data.type === 'chat') {
-        displayMessage(data.message, 'received');
-    }
-
-    // Handle WebRTC signaling messages
-    if (data.type === 'offer') {
-        await peerConnection.setRemoteDescription(new RTCSessionDescription(data.offer));
-
-        const answer = await peerConnection.createAnswer();
-        await peerConnection.setLocalDescription(answer);
-        signalingServer.send(JSON.stringify({ type: 'answer', answer }));
-    } else if (data.type === 'answer') {
-        await peerConnection.setRemoteDescription(new RTCSessionDescription(data.answer));
-    } else if (data.type === 'candidate') {
-        const candidate = new RTCIceCandidate(data.candidate);
-        await peerConnection.addIceCandidate(candidate);
-    } else if (data.type === 'auth_success') {
-        console.log('Authentification réussie');
-    } else if (data.type === 'auth_error') {
-        console.error('Erreur d\'authentification');
-    }
-};
-
-// Stop both local and remote streams
+// Stop chat
 function stopChat() {
-    if (peerConnection) {
-        peerConnection.close();
-        peerConnection = null;
-    }
+    if (peerConnection) peerConnection.close();
+    if (myStream) myStream.getTracks().forEach(track => track.stop());
 
-    if (myStream) {
-        myStream.getTracks().forEach(track => track.stop());
-        myStream = null;
-    }
-
-    myVideo.srcObject = null;
-    otherVideo.srcObject = null;
+    leftVideo.srcObject = null;
+    rightVideo.srcObject = null;
 
     startChatButton.classList.remove('hidden');
     stopChatButton.classList.add('hidden');
 }
 
-// Send message function
+// Send chat messages
 function sendMessage() {
     const message = chatInput.value.trim();
+    if (!message) return;
 
-    if (message !== '') {
-        // Display message in chat box
-        displayMessage(message, 'sent');
-        
-        // Send the message to the signaling server
-        signalingServer.send(JSON.stringify({ type: 'chat', message }));
-
-        // Clear the input field after sending the message
-        chatInput.value = '';
-    }
+    displayMessage(message, 'sent');
+    signalingServer.send(JSON.stringify({ type: 'chat', message }));
+    chatInput.value = '';
 }
 
-// Display message in the chat box
 function displayMessage(message, type) {
-    const messageDiv = document.createElement('div');
-    messageDiv.textContent = message;
-    messageDiv.classList.add(type === 'sent' ? 'sent-message' : 'received-message');
-    chatBox.appendChild(messageDiv);
-
-    // Scroll to the bottom
+    const div = document.createElement('div');
+    div.textContent = message;
+    div.classList.add(type === 'sent' ? 'sent-message' : 'received-message');
+    chatBox.appendChild(div);
     chatBox.scrollTop = chatBox.scrollHeight;
 }
 
 // Event listeners
 startChatButton.addEventListener('click', startChat);
 stopChatButton.addEventListener('click', stopChat);
-
-// Handle "Send" button click
 sendButton.addEventListener('click', sendMessage);
-
-// Handle "Enter" key press to send messages
-chatInput.addEventListener('keypress', (event) => {
-    if (event.key === 'Enter') {
-        event.preventDefault();  // Prevent the default Enter behavior (like line break)
-        sendMessage();  // Call sendMessage
-    }
-});
-
-// Auto-populate video and audio device inputs
-async function populateDevices() {
-    const devices = await navigator.mediaDevices.enumerateDevices();
-    const videoDevices = devices.filter(device => device.kind === 'videoinput');
-    const audioDevices = devices.filter(device => device.kind === 'audioinput');
-    const audioOutputDevices = devices.filter(device => device.kind === 'audiooutput');
-
-    videoDevices.forEach(device => {
-        const option = document.createElement('option');
-        option.value = device.deviceId;
-        option.textContent = device.label || `Caméra ${videoDevices.indexOf(device) + 1}`;
-        videoSelect.appendChild(option);
-    });
-
-    audioDevices.forEach(device => {
-        const option = document.createElement('option');
-        option.value = device.deviceId;
-        option.textContent = device.label || `Microphone ${audioDevices.indexOf(device) + 1}`;
-        audioSelect.appendChild(option);
-    });
-
-    audioOutputDevices.forEach(device => {
-        const option = document.createElement('option');
-        option.value = device.deviceId;
-        option.textContent = device.label || `Haut-parleur ${audioOutputDevices.indexOf(device) + 1}`;
-        audioOutputSelect.appendChild(option);
-    });
-}
-
-// Populate device selectors on page load
-populateDevices();
-
-// Open and close settings modal
-settingsIcon.addEventListener('click', () => {
-    settingsModal.style.display = 'block';
-});
-
-closeSettingsButton.addEventListener('click', () => {
-    settingsModal.style.display = 'none';
-});
+chatInput.addEventListener('keypress', e => { if(e.key==='Enter'){e.preventDefault();sendMessage();} });
+settingsIcon.addEventListener('click', () => settingsModal.style.display='block');
+closeSettingsButton.addEventListener('click', () => settingsModal.style.display='none');
