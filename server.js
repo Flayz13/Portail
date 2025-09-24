@@ -6,15 +6,23 @@ const cors = require("cors");
 
 const app = express();
 app.use(cors());
-app.use(express.json()); // <-- important to parse JSON body
+app.use(express.json()); // Parse JSON bodies
 
-// Hardcoded login credentials
-const users = [
-    { username: "Gap", password: "Gap" },
-    { username: "Veynes", password: "Veynes" }
-];
+// Hardcoded users
+const users = {
+    Gap: "Gap",
+    Veynes: "Veynes"
+};
 
-// Middleware pour vérifier le token d'authentification
+// Create HTTP server
+const server = app.listen(process.env.PORT || 3000, () => {
+    console.log(`Serveur démarré sur le port ${process.env.PORT || 3000}`);
+});
+
+// WebSocket server
+const wss = new WebSocket.Server({ server });
+
+// Authenticate WebSocket connections
 function authenticateToken(ws, next) {
     ws.on("message", (message) => {
         const data = JSON.parse(message);
@@ -32,23 +40,14 @@ function authenticateToken(ws, next) {
     });
 }
 
-// HTTP server
-const server = app.listen(process.env.PORT || 3000, () => {
-    console.log(`Server running on port ${process.env.PORT || 3000}`);
-});
-
-// WebSocket server
-const wss = new WebSocket.Server({ server });
-
+// Handle WebSocket connections
 wss.on("connection", (ws) => {
-    console.log("New WebSocket connection");
-
+    console.log("Nouvelle connexion WebSocket");
     authenticateToken(ws, () => {
         ws.on("message", (message) => {
             const data = JSON.parse(message);
-
-            // Broadcast chat messages
-            if (data.type === "chat" || data.type === "offer" || data.type === "answer" || data.type === "candidate") {
+            // Broadcast chat and WebRTC messages to others
+            if (["chat", "offer", "answer", "candidate"].includes(data.type)) {
                 wss.clients.forEach(client => {
                     if (client !== ws && client.readyState === WebSocket.OPEN) {
                         client.send(message);
@@ -59,16 +58,17 @@ wss.on("connection", (ws) => {
     });
 });
 
-// Test endpoint
+// Simple endpoint
 app.get("/", (req, res) => res.send("WebSocket Server Running"));
 
 // Login endpoint
 app.post("/login", (req, res) => {
     const { username, password } = req.body;
-    const user = users.find(u => u.username === username && u.password === password);
 
-    if (!user) return res.status(401).json({ error: "Invalid username or password" });
-
-    const token = jwt.sign({ username }, process.env.SECRET_KEY, { expiresIn: "1h" });
-    res.json({ token });
+    if (users[username] && users[username] === password) {
+        const token = jwt.sign({ username }, process.env.SECRET_KEY, { expiresIn: "1h" });
+        res.json({ token });
+    } else {
+        res.status(401).json({ error: "Nom d'utilisateur ou mot de passe invalide" });
+    }
 });
