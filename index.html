@@ -1,66 +1,46 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>Chat Vidéo</title>
-    <link rel="stylesheet" href="styles.css" />
+  <meta charset="UTF-8">
+  <title>Chat Vidéo</title>
+  <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <!-- Login Container -->
-    <div class="login-container" id="login-container">
-        <h2>Connexion</h2>
-        <input type="text" id="username" placeholder="Nom d'utilisateur" />
-        <input type="password" id="password" placeholder="Mot de passe" />
-        <button id="login-button">Connexion</button>
-        <div class="error-message" id="login-error" style="display:none;"></div>
-    </div>
+  <!-- Fenêtre de connexion -->
+  <div class="login-container" id="login-container">
+      <h2>Connexion</h2>
+      <input type="text" id="username" placeholder="Nom d'utilisateur" required>
+      <input type="password" id="password" placeholder="Mot de passe" required>
+      <button id="loginBtn">Connexion</button>
+      <p class="error-message" id="error-message"></p>
+  </div>
 
-    <!-- Chat Container (hidden until login) -->
-    <div class="chat-container" id="chat-container" style="display:none;">
-        <div class="settings-icon" id="settings-icon">&#9881;</div>
+  <!-- Interface principale -->
+  <div class="chat-container" id="chat-container">
+      <div class="video-section">
+          <div class="video-wrapper">
+              <video id="video-veynes" autoplay muted></video>
+              <p class="video-label">Veynes</p>
+          </div>
+          <div class="video-wrapper">
+              <video id="video-gap" autoplay></video>
+              <p class="video-label">Gap</p>
+          </div>
+      </div>
 
-        <div class="video-section">
-            <div class="video-wrapper">
-                <video id="my-stream" autoplay muted playsinline></video>
-            </div>
-            <div class="video-wrapper">
-                <video id="other-stream" autoplay playsinline></video>
-            </div>
-        </div>
+      <div class="controls-section">
+          <button class="control-btn" id="startCallBtn">Démarrer l'appel</button>
+      </div>
 
-        <div class="controls-section">
-            <button id="start-chat" class="control-btn">Démarrer</button>
-            <button id="stop-chat" class="control-btn hidden">Arrêter</button>
-        </div>
+      <div class="chat-box-container">
+          <div class="chat-box" id="chat-box"></div>
+          <div>
+              <input type="text" id="chat-input" class="chat-input" placeholder="Écrire un message...">
+              <button id="sendBtn" class="control-btn">Envoyer</button>
+          </div>
+      </div>
+  </div>
 
-        <div class="chat-box-container">
-            <div id="chat-box" class="chat-box"></div>
-            <div style="display:flex; gap:8px; margin-top:6px;">
-                <input id="chat-input" class="chat-input" placeholder="Écrire un message..." />
-                <button id="send-button" class="control-btn">Envoyer</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Settings Modal -->
-    <div class="settings-modal" id="settings-modal" style="display:none;">
-        <h2>Paramètres</h2>
-        <label for="video-input">Caméra :</label>
-        <select id="video-input"></select>
-
-        <label for="audio-input">Micro :</label>
-        <select id="audio-input"></select>
-
-        <label for="audio-output">Haut-parleur :</label>
-        <select id="audio-output"></select>
-
-        <label for="volume-control">Volume :</label>
-        <input id="volume-control" type="range" min="0" max="1" step="0.01" value="1" />
-
-        <button id="close-settings">Fermer</button>
-    </div>
-
-    <script src="script.js"></script>
+  <script src="script.js"></script>
 </body>
 </html>
