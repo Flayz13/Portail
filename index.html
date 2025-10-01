@@ -1,66 +1,62 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
     <title>Chat Vidéo</title>
-    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
     <!-- Login Container -->
     <div class="login-container" id="login-container">
         <h2>Connexion</h2>
-        <input type="text" id="username" placeholder="Nom d'utilisateur">
-        <input type="password" id="password" placeholder="Mot de passe">
+        <input type="text" id="username" placeholder="Nom d'utilisateur" />
+        <input type="password" id="password" placeholder="Mot de passe" />
         <button id="login-button">Connexion</button>
-        <div class="error-message" id="login-error"></div>
+        <div class="error-message" id="login-error" style="display:none;"></div>
     </div>
 
-    <!-- Chat Container -->
-    <div class="chat-container" id="chat-container">
-        <!-- Settings Icon -->
-        <div class="settings-icon" id="settings-icon">⚙️</div>
+    <!-- Chat Container (hidden until login) -->
+    <div class="chat-container" id="chat-container" style="display:none;">
+        <div class="settings-icon" id="settings-icon">&#9881;</div>
 
-        <!-- Video Section -->
         <div class="video-section">
             <div class="video-wrapper">
-                <video id="my-stream" autoplay muted></video>
+                <video id="my-stream" autoplay muted playsinline></video>
             </div>
             <div class="video-wrapper">
-                <video id="other-stream" autoplay></video>
+                <video id="other-stream" autoplay playsinline></video>
             </div>
         </div>
 
-        <!-- Controls Section -->
         <div class="controls-section">
-            <button class="control-btn" id="start-chat">Démarrer</button>
-            <button class="control-btn hidden" id="stop-chat">Arrêter</button>
+            <button id="start-chat" class="control-btn">Démarrer</button>
+            <button id="stop-chat" class="control-btn hidden">Arrêter</button>
         </div>
 
-        <!-- Chat Section -->
         <div class="chat-box-container">
-            <div class="chat-box" id="chat-box"></div>
-            <div style="display:flex; gap:5px;">
-                <input type="text" id="chat-input" class="chat-input" placeholder="Écrire un message...">
+            <div id="chat-box" class="chat-box"></div>
+            <div style="display:flex; gap:8px; margin-top:6px;">
+                <input id="chat-input" class="chat-input" placeholder="Écrire un message..." />
                 <button id="send-button" class="control-btn">Envoyer</button>
             </div>
         </div>
     </div>
 
     <!-- Settings Modal -->
-    <div class="settings-modal" id="settings-modal">
+    <div class="settings-modal" id="settings-modal" style="display:none;">
         <h2>Paramètres</h2>
         <label for="video-input">Caméra :</label>
         <select id="video-input"></select>
 
-        <label for="audio-input">Microphone :</label>
+        <label for="audio-input">Micro :</label>
         <select id="audio-input"></select>
 
         <label for="audio-output">Haut-parleur :</label>
         <select id="audio-output"></select>
 
         <label for="volume-control">Volume :</label>
-        <input type="range" id="volume-control" min="0" max="1" step="0.01">
+        <input id="volume-control" type="range" min="0" max="1" step="0.01" value="1" />
 
         <button id="close-settings">Fermer</button>
     </div>
