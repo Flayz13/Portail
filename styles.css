@@ -250,3 +250,15 @@ video {
     .chat-container { width: 100%; max-width: 100%; }
     .controls-section { flex-direction: column; gap: 5px; }
 }
+
+.video-label {
+    position: absolute;
+    bottom: 5px;
+    left: 5px;
+    background: rgba(0,0,0,0.6);
+    color: white;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 12px;
+}
+
