@@ -1,67 +1,87 @@
-require("dotenv").config();
-const express = require("express");
-const WebSocket = require("ws");
-const jwt = require("jsonwebtoken");
-const cors = require("cors");
+require('dotenv').config();
+const express = require('express');
+const cors = require('cors');
+const WebSocket = require('ws');
+const jwt = require('jsonwebtoken');
 
 const app = express();
 app.use(cors());
-app.use(express.json());
+app.use(express.json()); // important
+
+const PORT = process.env.PORT || 3000;
+const SECRET = process.env.SECRET_KEY || 'Portail';
 
 // Hardcoded users
-const users = { Gap: "Gap", Veynes: "Veynes" };
+const users = { Gap: 'Gap', Veynes: 'Veynes' };
 
 // HTTP server
-const server = app.listen(process.env.PORT || 3000, () => {
-    console.log(`Serveur démarré sur le port ${process.env.PORT || 3000}`);
+const server = app.listen(PORT, () => {
+    console.log(`Server listening on port ${PORT}`);
 });
 
-// WebSocket server
+// WebSocket server (attach to same http server)
 const wss = new WebSocket.Server({ server });
 
-// JWT authentication
+// Authenticate incoming websocket with token sent as first message of type 'auth'
 function authenticateToken(ws, next) {
-    ws.on("message", (message) => {
-        const data = JSON.parse(message);
-        if (data.type === "auth") {
-            try {
-                const decoded = jwt.verify(data.token, process.env.SECRET_KEY);
-                ws.user = decoded;
-                ws.send(JSON.stringify({ type: "auth_success" }));
-                next();
-            } catch {
-                ws.send(JSON.stringify({ type: "auth_error" }));
-                ws.close();
+    const authListener = function incoming(message) {
+        try {
+            const data = JSON.parse(message);
+            if (data.type === 'auth') {
+                try {
+                    const decoded = jwt.verify(data.token, SECRET);
+                    ws.user = decoded;
+                    ws.send(JSON.stringify({ type: 'auth_success' }));
+                    ws.off('message', authListener); // remove auth listener
+                    next();
+                } catch (err) {
+                    ws.send(JSON.stringify({ type: 'auth_error' }));
+                    ws.close();
+                }
+            } else {
+                ws.send(JSON.stringify({ type: 'auth_required' }));
             }
+        } catch (err) {
+            ws.send(JSON.stringify({ type: 'error', message: 'Invalid JSON' }));
         }
-    });
+    };
+    ws.on('message', authListener);
 }
 
-// WebSocket connections
-wss.on("connection", (ws) => {
-    console.log("Nouvelle connexion WebSocket");
+wss.on('connection', (ws) => {
+    console.log('New WS connection');
     authenticateToken(ws, () => {
-        ws.on("message", (message) => {
-            const data = JSON.parse(message);
-            if (["chat","offer","answer","candidate"].includes(data.type)) {
-                wss.clients.forEach(client => {
-                    if (client !== ws && client.readyState === WebSocket.OPEN) client.send(message);
-                });
+        ws.on('message', (message) => {
+            // broadcast to other clients
+            try {
+                const data = JSON.parse(message);
+                if (['chat', 'offer', 'answer', 'candidate'].includes(data.type)) {
+                    wss.clients.forEach(client => {
+                        if (client !== ws && client.readyState === WebSocket.OPEN) {
+                            client.send(message);
+                        }
+                    });
+                }
+            } catch (err) {
+                console.warn('WS message non JSON', err);
             }
         });
     });
 });
 
-// Test endpoint
-app.get("/", (req,res) => res.send("WebSocket Server Running"));
+// test endpoints
+app.get('/', (req, res) => res.send('WebSocket Server Running'));
+app.get('/health', (req, res) => res.json({ ok: true }));
 
-// Login endpoint
-app.post("/login", (req,res) => {
-    const { username, password } = req.body;
-    if(users[username] && users[username] === password) {
-        const token = jwt.sign({ username }, process.env.SECRET_KEY, { expiresIn: "1h" });
-        res.json({ token });
+app.post('/login', (req, res) => {
+    const { username, password } = req.body || {};
+    if (!username || !password) {
+        return res.status(400).json({ error: 'username et password requis' });
+    }
+    if (users[username] && users[username] === password) {
+        const token = jwt.sign({ username }, SECRET, { expiresIn: '1h' });
+        return res.json({ token });
     } else {
-        res.status(401).json({ error: "Nom d'utilisateur ou mot de passe invalide" });
+        return res.status(401).json({ error: "Nom d'utilisateur ou mot de passe invalide" });
     }
 });
