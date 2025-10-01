@@ -3,7 +3,7 @@ const BACKEND_URL = "https://flayz13s-projects.up.railway.app"; // <- mettre l'U
 // Si tu testes localement (serveur sur ta machine), remplace par "http://localhost:3000"
 
 // Derived WebSocket URL
-const SIGNALING_URL = BACKEND_URL.replace(/^http/, 'ws');
+const SIGNALING_URL = BACKEND_URL.replace(/^http/, "ws");
 
 // ---------- UI elements ----------
 const loginButton = document.getElementById('login-button');
