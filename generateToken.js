@@ -1,3 +1,3 @@
 const jwt = require("jsonwebtoken");
-const token = jwt.sign({ user: "demo" }, "votre_cle_secrete");
+const token = jwt.sign({ user: "Gap" }, "Gap");
 console.log(token);
