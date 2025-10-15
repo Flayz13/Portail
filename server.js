@@ -7,26 +7,29 @@ const bodyParser = require("body-parser");
 
 const app = express();
 app.use(cors());
-app.use(bodyParser.json());
+app.use(bodyParser.json()); // Pour analyser les corps de requêtes JSON
 
-// Endpoint simple pour tester
+// Liste des utilisateurs et mots de passe
+const users = {
+    "Gap": "Gap",  // Nom d'utilisateur : Mot de passe
+    "Veynes": "Veynes"
+};
+
+// Endpoint simple pour tester le serveur
 app.get("/", (req, res) => res.send("Serveur WebSocket actif 🚀"));
 
-// Endpoint login
+// Endpoint pour la connexion avec le login
 app.post("/login", (req, res) => {
     const { username, password } = req.body;
 
-    // Deux utilisateurs autorisés
-    const users = {
-        "Gap": "Gap",
-        "Veynes": "Veynes"
-    };
-
+    // Vérifier si l'utilisateur existe et si le mot de passe est correct
     if (users[username] && users[username] === password) {
-        const token = jwt.sign({ username }, process.env.SECRET_KEY || "secret123", { expiresIn: "1h" });
+        // Générer un token JWT pour l'utilisateur authentifié
+        const token = jwt.sign({ user: username }, process.env.SECRET_KEY || "secret123", { expiresIn: "1h" });
         return res.json({ token });
     }
 
+    // Si les informations sont incorrectes
     res.status(401).json({ error: "Nom d'utilisateur ou mot de passe invalide" });
 });
 
@@ -50,11 +53,11 @@ wss.on("connection", (ws) => {
             return;
         }
 
-        // Authentification
+        // Authentification via token
         if (data.type === "auth") {
             try {
                 const decoded = jwt.verify(data.token, process.env.SECRET_KEY || "secret123");
-                ws.user = decoded;
+                ws.user = decoded;  // Ajout de l'utilisateur à la connexion WebSocket
                 ws.send(JSON.stringify({ type: "auth_success", user: decoded.username }));
             } catch (err) {
                 ws.send(JSON.stringify({ type: "auth_error" }));
