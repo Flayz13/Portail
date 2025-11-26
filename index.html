@@ -3,41 +3,47 @@
 <head>
     <meta charset="UTF-8">
     <title>Chat Vidéo</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
 
-    <!-- Settings Icon -->
+    <!-- Icône paramètres -->
     <div id="settings-icon" class="settings-icon">&#9881;</div>
 
-    <div class="chat-container" id="chat-container">
+    <!-- Conteneur principal -->
+    <div id="chat-container" class="chat-container">
 
+        <!-- SECTION VIDÉOS -->
         <div class="video-section">
             <div class="video-wrapper">
                 <video id="my-stream" autoplay muted></video>
+                <div class="video-label">Moi</div>
             </div>
+
             <div class="video-wrapper">
                 <video id="other-stream" autoplay></video>
+                <div class="video-label">Autre</div>
             </div>
         </div>
 
+        <!-- BOUTONS -->
         <div class="controls-section">
-            <button id="start-chat" class="control-btn">Commencer</button>
-            <button id="stop-chat" class="control-btn hidden">Skip / Arrêter</button>
+            <button id="start-chat" class="control-btn">Démarrer</button>
+            <button id="skip-chat" class="control-btn">Skip</button>
         </div>
 
+        <!-- CHAT -->
         <div class="chat-box-container">
             <div id="chat-box" class="chat-box"></div>
+
             <div style="display:flex;">
-                <input type="text" id="chat-input" class="chat-input" placeholder="Tape un message...">
+                <input type="text" id="chat-input" class="chat-input" placeholder="Tape ton message...">
                 <button id="send-button" class="control-btn">Envoyer</button>
             </div>
         </div>
-
     </div>
 
-    <!-- Settings Modal -->
+    <!-- MODAL PARAMÈTRES -->
     <div id="settings-modal" class="settings-modal">
         <h2>Paramètres</h2>
 
