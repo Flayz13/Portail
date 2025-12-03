@@ -7,61 +7,51 @@
 </head>
 <body>
 
-    <!-- Icône paramètres -->
-    <div id="settings-icon" class="settings-icon">&#9881;</div>
+<!-- Icône paramètres -->
+<div id="settings-icon" class="settings-icon">⚙️</div>
 
-    <!-- Conteneur principal -->
-    <div id="chat-container" class="chat-container">
+<!-- Zone principale -->
+<div class="chat-container" id="chat-container">
 
-        <!-- VIDÉOS -->
-        <div class="video-section">
-            <div class="video-wrapper">
-                <video id="my-stream" autoplay muted></video>
-                <div class="video-label">Moi</div>
-            </div>
-
-            <div class="video-wrapper">
-                <video id="other-stream" autoplay></video>
-                <div class="video-label">Autre</div>
-            </div>
+    <div class="video-section">
+        <div class="video-wrapper">
+            <video id="my-stream" autoplay muted></video>
         </div>
-
-        <!-- BOUTONS -->
-        <div class="controls-section">
-            <button id="start-chat" class="control-btn">Démarrer</button>
-            <button id="skip-chat" class="control-btn">Skip</button>
-        </div>
-
-        <!-- CHATBOX -->
-        <div class="chat-box-container">
-            <div id="chat-box" class="chat-box"></div>
-
-            <div class="chat-input-zone">
-                <input type="text" id="chat-input" class="chat-input" placeholder="Tape ton message...">
-                <button id="send-button" class="control-btn">Envoyer</button>
-            </div>
+        <div class="video-wrapper">
+            <video id="other-stream" autoplay></video>
         </div>
     </div>
 
-    <!-- MODAL PARAMÈTRES -->
-    <div id="settings-modal" class="settings-modal">
-        <h2>Paramètres</h2>
-
-        <label>Caméra :</label>
-        <select id="video-input"></select>
-
-        <label>Micro :</label>
-        <select id="audio-input"></select>
-
-        <label>Haut-parleurs :</label>
-        <select id="audio-output"></select>
-
-        <label>Volume :</label>
-        <input type="range" id="volume-control" min="0" max="1" step="0.01" value="1">
-
-        <button id="close-settings">Fermer</button>
+    <div class="controls-section">
+        <button id="start-chat" class="control-btn">Démarrer</button>
+        <button id="stop-chat" class="control-btn hidden">Arrêter</button>
+        <button id="skip-btn" class="control-btn">Skip</button>
     </div>
 
-    <script src="script.js"></script>
+    <div class="chat-box-container">
+        <div id="chat-box" class="chat-box"></div>
+        <input type="text" id="chat-input" class="chat-input" placeholder="Écris ton message...">
+        <button id="send-button" class="control-btn">Envoyer</button>
+    </div>
+
+</div>
+
+<!-- MODAL PARAMÈTRES -->
+<div id="settings-modal" class="settings-modal">
+    <h2>Paramètres</h2>
+
+    <label>Caméra</label>
+    <select id="video-input"></select>
+
+    <label>Micro</label>
+    <select id="audio-input"></select>
+
+    <label>Volume</label>
+    <input type="range" id="volume-control" min="0" max="1" step="0.01" value="1">
+
+    <button id="close-settings">Fermer</button>
+</div>
+
+<script src="script.js"></script>
 </body>
 </html>
