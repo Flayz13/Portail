@@ -1,216 +1,95 @@
-// Video elements and controls
 const myVideo = document.getElementById('my-stream');
 const otherVideo = document.getElementById('other-stream');
-const startChatButton = document.getElementById('start-chat');
-const stopChatButton = document.getElementById('stop-chat');
-
-// Chat elements
+const startBtn = document.getElementById('start-chat');
+const skipBtn = document.getElementById('skip-chat');
+const sendBtn = document.getElementById('send-button');
 const chatInput = document.getElementById('chat-input');
 const chatBox = document.getElementById('chat-box');
-const sendButton = document.getElementById('send-button');
 
-// WebRTC and WebSocket setup
-let myStream;
-let peerConnection;
-const iceServers = { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] };
-
-// ⚠️ Important : ton serveur doit gérer le matching automatique
-const signalingServer = new WebSocket('wss://flayz13s-projects.up.railway.app');
-
-// Camera and Microphone Selection (for settings)
-const videoSelect = document.getElementById('video-input');
-const audioSelect = document.getElementById('audio-input');
-const audioOutputSelect = document.getElementById('audio-output');
-const volumeControl = document.getElementById('volume-control');
-const settingsModal = document.getElementById('settings-modal');
 const settingsIcon = document.getElementById('settings-icon');
-const closeSettingsButton = document.getElementById('close-settings');
+const settingsModal = document.getElementById('settings-modal');
+const closeSettings = document.getElementById('close-settings');
 
-// ----- AUTO MATCHMAKING -----
+let localStream;
+let peerConnection;
 
-signalingServer.onopen = () => {
-    console.log("✅ Connecté au serveur");
-    
-    // 🔥 Demande au serveur d’être mis en attente d’un autre utilisateur
-    signalingServer.send(JSON.stringify({ type: "find-partner" }));
+const socket = new WebSocket("wss://flayz13s-projects.up.railway.app");
+
+const iceServers = {
+    iceServers: [{ urls: "stun:stun.l.google.com:19302" }]
 };
 
-// ----- MEDIA PERMISSIONS -----
+settingsIcon.onclick = () => settingsModal.style.display = "block";
+closeSettings.onclick = () => settingsModal.style.display = "none";
 
-async function requestMediaPermissions() {
-    try {
-        const devices = await navigator.mediaDevices.enumerateDevices();
-        const videoDevices = devices.filter(device => device.kind === 'videoinput');
-        const audioDevices = devices.filter(device => device.kind === 'audioinput');
+startBtn.onclick = async () => {
+    localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+    myVideo.srcObject = localStream;
 
-        if (videoDevices.length === 0 || audioDevices.length === 0) {
-            alert("Autorise la caméra et le micro !");
-            return false;
-        }
-        return true;
-    } catch (error) {
-        console.error(error);
-        return false;
-    }
-}
+    socket.send(JSON.stringify({ type: "search" }));
+};
 
-// ----- START VIDEO CHAT -----
+skipBtn.onclick = () => {
+    if (peerConnection) peerConnection.close();
+    otherVideo.srcObject = null;
 
-async function startChat() {
-    const permissionGranted = await requestMediaPermissions();
-    if (!permissionGranted) return;
+    socket.send(JSON.stringify({ type: "search" }));
+};
 
-    myStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-    myVideo.srcObject = myStream;
+socket.onmessage = async (message) => {
+    const data = JSON.parse(message.data);
 
+    if (data.type === "match") startCall();
+    if (data.type === "offer") handleOffer(data.offer);
+    if (data.type === "answer") peerConnection.setRemoteDescription(data.answer);
+    if (data.type === "candidate") peerConnection.addIceCandidate(new RTCIceCandidate(data.candidate));
+    if (data.type === "chat") displayMessage(data.message, "received");
+};
+
+async function startCall() {
     peerConnection = new RTCPeerConnection(iceServers);
 
-    myStream.getTracks().forEach(track => peerConnection.addTrack(track, myStream));
+    localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
 
-    peerConnection.onicecandidate = event => {
-        if (event.candidate) {
-            signalingServer.send(JSON.stringify({
-                type: "candidate",
-                candidate: event.candidate
-            }));
-        }
-    };
+    peerConnection.ontrack = e => otherVideo.srcObject = e.streams[0];
 
-    peerConnection.ontrack = event => {
-        otherVideo.srcObject = event.streams[0];
+    peerConnection.onicecandidate = e => {
+        if (e.candidate) socket.send(JSON.stringify({ type: "candidate", candidate: e.candidate }));
     };
 
     const offer = await peerConnection.createOffer();
     await peerConnection.setLocalDescription(offer);
 
-    signalingServer.send(JSON.stringify({
-        type: "offer",
-        offer
-    }));
-
-    startChatButton.classList.add("hidden");
-    stopChatButton.classList.remove("hidden");
+    socket.send(JSON.stringify({ type: "offer", offer }));
 }
 
-// ----- SKIP PARTNER -----
+async function handleOffer(offer) {
+    peerConnection = new RTCPeerConnection(iceServers);
+    await peerConnection.setRemoteDescription(offer);
 
-function skipPartner() {
-    stopChat();
+    localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
 
-    chatBox.innerHTML = "";
+    const answer = await peerConnection.createAnswer();
+    await peerConnection.setLocalDescription(answer);
 
-    signalingServer.send(JSON.stringify({
-        type: "skip"
-    }));
-
-    setTimeout(() => {
-        signalingServer.send(JSON.stringify({ type: "find-partner" }));
-    }, 500);
+    socket.send(JSON.stringify({ type: "answer", answer }));
 }
 
-// ----- STOP CHAT -----
-
-function stopChat() {
-    if (peerConnection) {
-        peerConnection.close();
-        peerConnection = null;
-    }
-
-    if (myStream) {
-        myStream.getTracks().forEach(track => track.stop());
-        myStream = null;
-    }
-
-    myVideo.srcObject = null;
-    otherVideo.srcObject = null;
-
-    startChatButton.classList.remove("hidden");
-    stopChatButton.classList.add("hidden");
-}
-
-// ----- CHAT -----
+sendBtn.onclick = sendMessage;
+chatInput.onkeypress = e => e.key === "Enter" && sendMessage();
 
 function sendMessage() {
-    const message = chatInput.value.trim();
-    if (!message) return;
+    if (!chatInput.value) return;
 
-    displayMessage(message, "sent");
-
-    signalingServer.send(JSON.stringify({
-        type: "chat",
-        message
-    }));
-
+    displayMessage(chatInput.value, "sent");
+    socket.send(JSON.stringify({ type: "chat", message: chatInput.value }));
     chatInput.value = "";
 }
 
-function displayMessage(message, type) {
+function displayMessage(msg, type) {
     const div = document.createElement("div");
-    div.textContent = message;
+    div.textContent = msg;
     div.className = type === "sent" ? "sent-message" : "received-message";
     chatBox.appendChild(div);
     chatBox.scrollTop = chatBox.scrollHeight;
 }
-
-// ----- SIGNAL SERVER HANDLER -----
-
-signalingServer.onmessage = async message => {
-    const data = JSON.parse(message.data);
-    console.log("📩", data);
-
-    if (data.type === "partner-found") {
-        console.log("✅ Partenaire trouvé !");
-    }
-
-    if (data.type === "offer") {
-        if (!peerConnection) startChat();
-
-        await peerConnection.setRemoteDescription(new RTCSessionDescription(data.offer));
-        const answer = await peerConnection.createAnswer();
-        await peerConnection.setLocalDescription(answer);
-
-        signalingServer.send(JSON.stringify({
-            type: "answer",
-            answer
-        }));
-    }
-
-    if (data.type === "answer") {
-        await peerConnection.setRemoteDescription(new RTCSessionDescription(data.answer));
-    }
-
-    if (data.type === "candidate") {
-        if (peerConnection) {
-            await peerConnection.addIceCandidate(new RTCIceCandidate(data.candidate));
-        }
-    }
-
-    if (data.type === "chat") {
-        displayMessage(data.message, "received");
-    }
-
-    if (data.type === "partner-left") {
-        alert("L'autre personne a quitté. Nouvelle recherche...");
-        skipPartner();
-    }
-};
-
-// ----- EVENTS -----
-
-startChatButton.addEventListener("click", startChat);
-stopChatButton.addEventListener("click", skipPartner);
-sendButton.addEventListener("click", sendMessage);
-
-chatInput.addEventListener("keypress", e => {
-    if (e.key === "Enter") sendMessage();
-});
-
-// ----- SETTINGS -----
-
-settingsIcon.addEventListener("click", () => {
-    settingsModal.style.display = "block";
-});
-
-closeSettingsButton.addEventListener("click", () => {
-    settingsModal.style.display = "none";
-});
