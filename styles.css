@@ -1,146 +1,91 @@
 body {
     margin: 0;
-    background-color: #f0f0f0;
     font-family: Arial, sans-serif;
-    display: flex;
-    justify-content: center;
-    height: 100vh;
+    background: #f0f0f0;
 }
 
 .chat-container {
     width: 90%;
-    max-width: 900px;
+    max-width: 1000px;
+    margin: auto;
+    margin-top: 20px;
     background: white;
     border-radius: 10px;
     overflow: hidden;
-    display: flex;
-    flex-direction: column;
 }
 
 .video-section {
-    background: #222;
     display: flex;
-    padding: 10px;
+    background: black;
 }
 
 .video-wrapper {
     width: 50%;
-    position: relative;
 }
 
 video {
     width: 100%;
-    height: 250px;
+    height: 100%;
     object-fit: cover;
 }
 
-.video-label {
-    position: absolute;
-    bottom: 5px;
-    left: 5px;
-    background: rgba(0,0,0,0.6);
-    color: white;
-    padding: 3px 6px;
-    border-radius: 4px;
-    font-size: 12px;
-}
-
 .controls-section {
+    background: #222;
     display: flex;
     justify-content: center;
-    padding: 10px;
-    background: #333;
     gap: 10px;
+    padding: 10px;
 }
 
 .control-btn {
+    padding: 10px 15px;
+    border: none;
     background: #ff4b4b;
     color: white;
-    border: none;
-    padding: 8px 15px;
-    cursor: pointer;
     border-radius: 5px;
+    cursor: pointer;
 }
 
-.control-btn:hover {
-    background: #ff6b6b;
+.hidden {
+    display: none;
 }
 
 .chat-box-container {
-    display: flex;
-    flex-direction: column;
-    height: 250px;
     padding: 10px;
 }
 
 .chat-box {
-    flex: 1;
+    height: 200px;
+    overflow-y: auto;
     background: #eee;
     padding: 10px;
-    overflow-y: auto;
-    border-radius: 6px;
-}
-
-.chat-input-zone {
-    display: flex;
-    gap: 10px;
-    margin-top: 10px;
+    border-radius: 5px;
 }
 
 .chat-input {
-    flex: 1;
-    padding: 8px;
+    width: 80%;
+    padding: 10px;
+    margin-top: 10px;
+    pointer-events: auto;
+    user-select: text;
 }
 
-.sent-message {
-    background: #cce5ff;
-    margin: 5px;
-    padding: 6px;
-    border-radius: 6px;
-    text-align: right;
-}
-
-.received-message {
-    background: #ddd;
-    margin: 5px;
-    padding: 6px;
-    border-radius: 6px;
-}
-
-/* SETTINGS */
 .settings-icon {
     position: fixed;
     top: 10px;
     right: 10px;
-    font-size: 28px;
+    font-size: 30px;
     cursor: pointer;
 }
 
 .settings-modal {
     display: none;
     position: fixed;
-    top: 50%;
-    left: 50%;
     background: white;
+    width: 300px;
     padding: 20px;
     border-radius: 10px;
+    top: 50%;
+    left: 50%;
     transform: translate(-50%, -50%);
-    box-shadow: 0px 0px 10px black;
-    z-index: 100;
-}
-
-.settings-modal select,
-.settings-modal input {
-    width: 100%;
-    margin-bottom: 10px;
-}
-
-.settings-modal button {
-    width: 100%;
-}
-
-.chat-input {
-    pointer-events: auto !important;
-    user-select: text !important;
-    z-index: 9999;
 }
