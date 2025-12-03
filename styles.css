@@ -138,3 +138,9 @@ video {
 .settings-modal button {
     width: 100%;
 }
+
+.chat-input {
+    pointer-events: auto !important;
+    user-select: text !important;
+    z-index: 9999;
+}
