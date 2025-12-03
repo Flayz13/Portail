@@ -1,126 +1,149 @@
+// client.js (Anciennement server.js)
+
+// --- VARIABLES GLOBALES (À CONSERVER EN HAUT DE VOTRE FICHIER) ---
 const myVideo = document.getElementById('my-stream');
 const otherVideo = document.getElementById('other-stream');
-const startBtn = document.getElementById('start-chat');
-const skipBtn = document.getElementById('skip-chat');
-
-const chatInput = document.getElementById('chat-input');
 const chatBox = document.getElementById('chat-box');
-const sendBtn = document.getElementById('send-button');
+const chatInput = document.getElementById('chat-input');
+const sendButton = document.getElementById('send-button');
+const startButton = document.getElementById('start-chat');
+const skipButton = document.getElementById('skip-btn');
+const stopButton = document.getElementById('stop-chat');
 
-const settingsModal = document.getElementById('settings-modal');
-const settingsIcon = document.getElementById('settings-icon');
-const closeSettings = document.getElementById('close-settings');
-
-let localStream;
-let peerConnection;
 let partnerId = null;
+let peerConnection; // Votre objet RTCPeerConnection
+let localStream; // Votre flux vidéo/audio local
+// Assurez-vous que le port correspond à celui de votre serveur Node.js (ex: 3000)
+const socket = new WebSocket("ws://localhost:3000"); 
 
-const socket = new WebSocket("wss://flayz13s-projects.up.railway.app");
 
-const iceServers = {
-    iceServers: [{ urls: "stun:stun.l.google.com:19302" }]
-};
+// -----------------------------------------------------------
+// --- NOUVELLES FONCTIONS D'INTERFACE ET DE CHAT ---
+// -----------------------------------------------------------
 
-// ✅ Connexion WebSocket
-socket.onmessage = async (msg) => {
-    const data = JSON.parse(msg.data);
-
-    if (data.type === "match") {
-        partnerId = data.partner;
-        startCall();
-    }
-
-    if (data.type === "offer") {
-        peerConnection = new RTCPeerConnection(iceServers);
-        await peerConnection.setRemoteDescription(data.offer);
-
-        localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
-
-        const answer = await peerConnection.createAnswer();
-        await peerConnection.setLocalDescription(answer);
-
-        socket.send(JSON.stringify({ type: "answer", answer }));
-    }
-
-    if (data.type === "answer") {
-        await peerConnection.setRemoteDescription(data.answer);
-    }
-
-    if (data.type === "candidate") {
-        await peerConnection.addIceCandidate(new RTCIceCandidate(data.candidate));
-    }
-
-    if (data.type === "chat") {
-        displayMessage(data.message, "received");
-    }
-};
-
-// ✅ Démarrer caméra
-startBtn.onclick = async () => {
-    localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-    myVideo.srcObject = localStream;
-
-    socket.send(JSON.stringify({ type: "search" }));
-};
-
-// ✅ Start Appel
-async function startCall() {
-    peerConnection = new RTCPeerConnection(iceServers);
-
-    localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
-
-    peerConnection.ontrack = e => {
-        otherVideo.srcObject = e.streams[0];
-    };
-
-    peerConnection.onicecandidate = e => {
-        if (e.candidate) {
-            socket.send(JSON.stringify({ type: "candidate", candidate: e.candidate }));
-        }
-    };
-
-    const offer = await peerConnection.createOffer();
-    await peerConnection.setLocalDescription(offer);
-    socket.send(JSON.stringify({ type: "offer", offer }));
-}
-
-// ✅ Bouton Skip
-skipBtn.onclick = () => {
-    if (peerConnection) peerConnection.close();
-    otherVideo.srcObject = null;
-
-    partnerId = null;
-    socket.send(JSON.stringify({ type: "search" }));
-};
-
-// ✅ Chat
-sendBtn.onclick = sendMessage;
-
-chatInput.addEventListener("keypress", e => {
-    if (e.key === "Enter") sendMessage();
-});
-
-function sendMessage() {
-    if (!chatInput.value) return;
-
-    displayMessage(chatInput.value, "sent");
-
-    socket.send(JSON.stringify({
-        type: "chat",
-        message: chatInput.value
-    }));
-
-    chatInput.value = "";
-}
-
-function displayMessage(msg, type) {
-    const div = document.createElement("div");
-    div.textContent = msg;
-    div.className = type === "sent" ? "sent-message" : "received-message";
-    chatBox.appendChild(div);
+/**
+ * Affiche un message dans la boîte de chat.
+ * @param {string} message - Le contenu du message.
+ * @param {string} senderType - 'sent' ou 'received'.
+ */
+function displayMessage(message, senderType) {
+    const messageDiv = document.createElement('div');
+    messageDiv.textContent = message;
+    messageDiv.classList.add(senderType === 'sent' ? 'sent-message' : 'received-message');
+    chatBox.appendChild(messageDiv);
+    // Défile vers le bas pour voir le dernier message
     chatBox.scrollTop = chatBox.scrollHeight;
 }
 
-// ✅ Paramètres
-settingsIcon.onclick = () => settingsModal.style.display = "block";
-closeSettings.onclick = () => settingsModal.style.display = "none";
+/**
+ * Gère l'envoi d'un message via WebSocket.
+ */
+function sendMessage() {
+    const message = chatInput.value.trim();
+    if (message !== '' && partnerId) {
+        // 1. Envoyer le message via WebSocket au serveur backend
+        const chatData = {
+            type: 'chat',
+            message: message,
+            targetId: partnerId // Le backend reliera vers le partenaire
+        };
+        socket.send(JSON.stringify(chatData));
+        
+        // 2. Afficher le message localement (dans votre propre chatbox)
+        displayMessage(`Moi: ${message}`, 'sent');
+        
+        // 3. Vider le champ de saisie
+        chatInput.value = '';
+    }
+}
+
+
+// -----------------------------------------------------------
+// --- GESTION DES ÉVÉNEMENTS (AJOUTS CLÉS) ---
+// -----------------------------------------------------------
+
+// 1. Événement pour le clic sur le bouton "Envoyer"
+sendButton.addEventListener('click', sendMessage);
+
+// 2. Événement pour la touche "Entrée" dans le champ de saisie
+chatInput.addEventListener('keypress', (event) => {
+    // Vérifie si la touche pressée est 'Enter'
+    if (event.key === 'Enter') {
+        event.preventDefault(); // Empêche le retour à la ligne par défaut
+        sendMessage();
+    }
+});
+
+// 3. Événement Démarrer/Arrêter/Skip (Connexion à remplacer par vos fonctions réelles)
+startButton.addEventListener('click', () => {
+    // Logique pour commencer la recherche de partenaire
+    socket.send(JSON.stringify({ type: 'search' })); 
+    startButton.classList.add('hidden');
+    stopButton.classList.remove('hidden');
+    displayMessage("Recherche d'un partenaire en cours...", "received");
+    // Initialisez la caméra ici (votre fonction d'initialisation)
+    // initLocalStream(); 
+});
+
+stopButton.addEventListener('click', () => {
+    // Logique pour se déconnecter du partenaire actuel et s'arrêter
+    // closeCall(); // Votre fonction pour fermer la connexion WebRTC
+    startButton.classList.remove('hidden');
+    stopButton.classList.add('hidden');
+    displayMessage("Chat terminé. Cliquez sur Démarrer pour chercher un nouveau partenaire.", "received");
+});
+
+skipButton.addEventListener('click', () => {
+    // Logique pour sauter le partenaire (envoie la déconnexion et relance la recherche)
+    // closeCall(); // Votre fonction pour fermer la connexion WebRTC
+    socket.send(JSON.stringify({ type: 'search' }));
+    displayMessage("Partenaire ignoré. Recherche d'un nouveau match...", "received");
+});
+
+
+// -----------------------------------------------------------
+// --- GESTION DES MESSAGES DU SERVEUR (Mise à jour) ---
+// -----------------------------------------------------------
+
+socket.onopen = () => {
+    console.log("Connecté au serveur WebSocket.");
+};
+
+socket.onmessage = async (msg) => {
+    const data = JSON.parse(msg.data);
+
+    switch (data.type) {
+        case 'match':
+            // Nouvelle fonction pour démarrer l'appel WebRTC
+            partnerId = data.partner;
+            // startCall(data.partner); 
+            console.log(`Match trouvé avec ${partnerId}`);
+            displayMessage("Partenaire trouvé ! Démarrage de la connexion vidéo...", "received");
+            startButton.classList.add('hidden');
+            skipButton.classList.remove('hidden');
+            break;
+
+        case 'chat':
+            // ⭐️ NOUVEAU: Affichage du message reçu
+            displayMessage(`Partenaire: ${data.message}`, 'received');
+            break;
+
+        case 'partner_disconnected':
+            // Gérer la déconnexion du partenaire
+            // closeCall(); // Votre fonction pour nettoyer l'appel
+            partnerId = null;
+            displayMessage("Le partenaire a mis fin à la conversation. En recherche d'un nouveau match...", "received");
+            // Relancer la recherche automatiquement
+            socket.send(JSON.stringify({ type: "search" }));
+            break;
+            
+        // ... (vos autres cas: 'offer', 'answer', 'candidate' pour WebRTC) ...
+
+        default:
+            console.log("Message inconnu reçu:", data.type);
+    }
+};
+
+socket.onclose = () => {
+    console.warn("Déconnexion du serveur WebSocket.");
+};
