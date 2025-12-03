@@ -190,4 +190,10 @@ async function populateDevices() {
   });
 }
 
+// SÉCURITÉ : FERMETURE AUTO DES PARAMÈTRES AU CHARGEMENT
+window.addEventListener("click", () => {
+    settingsModal.style.display = "none";
+});
+
+
 populateDevices();
